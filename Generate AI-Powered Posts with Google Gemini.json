@@ -1,0 +1,311 @@
+{
+  "name": "Generate AI-Powered Posts with Google Gemini",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "AI Post Generator ",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Topic",
+              "placeholder": "Enter prompt here....",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ab4282b8-43e9-466a-9986-70e5e449eb5e",
+      "name": "On form submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "position": [
+        880,
+        544
+      ],
+      "webhookId": "e06e171b-45cc-4c4f-bbc5-ffedd4d60f47",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "694a158d-53fd-425c-9a42-be4288c17ac9",
+              "name": "chatInput",
+              "type": "string",
+              "value": "={{ $json.Topic }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e593eb90-b859-499b-8b18-3f8fbe8017da",
+      "name": "Mapper",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1104,
+        544
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=You are an expert content creator for LinkedIn. Your task is to generate professional LinkedIn post content, an image generation prompt, a style ID, and a size based on a user-provided topic.\n\nThe output must be a single, complete JSON object.\n\n**1. LinkedIn Post Content**:\n- Write an engaging and informative LinkedIn post on the topic: \"{{ $json.chatInput }}\".\n- Start with an attention-grabbing hook.\n- Provide valuable insights or actionable tips.\n- The tone should be professional, clear, and concise.\n- End with a call to action (CTA).\n- Include 3-5 relevant hashtags.\n\n**2. Image Generation Prompt**:\n- Create a detailed image prompt that aligns with LinkedIn's professional and corporate atmosphere.\n- The image should visualize the topic and use a corporate color palette (e.g., blues, grays).\n- The style should be modern, minimalist, and sleek.\n- Crucially, do not include any text in the image prompt.\n\n**3. API Parameters**:\n- Based on the topic, select an appropriate style_id from these options:\n  - 1 for photorealistic\n  - 2 for cinematic\n  - 4 for digital art\n  - 8 for anime\n- Based on the image prompt, select an appropriate size from these options:\n  - \"1-1\" for square\n  - \"9-16\" for vertical\n  - \"16-9\" for horizontal\n\nThe final JSON output must look exactly like this, with the values filled in:\n{\n  \"post_content\": {\n    \"text\": \"[Generated LinkedIn Post Content]\"\n  },\n  \"image_prompt\": {\n    \"description\": \"[Generated Image Prompt]\"\n  },\n  \"style_id\": [Chosen style_id],\n  \"size\": \"[Chosen size]\"\n}\n"
+        }
+      },
+      "id": "c48b5989-66ed-4fe2-96a2-6b540ac87d54",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        864,
+        800
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "id": "e56b669f-caa5-435d-be77-8abf8d79d4fc",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "position": [
+        736,
+        912
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "pdrptpb4yIYIDCAx",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json.output;\n\nconst cleanedInput = input.replace(/```json|```/g, '').trim();\n\n// Parse the cleaned JSON\nconst parsedOutput = JSON.parse(cleanedInput);\n\n// Prepare the final output in the desired JSON structure\nreturn {\n  post_content: parsedOutput.post_content,\n  image_prompt: parsedOutput.image_prompt,\n  style_id: parsedOutput.style_id,\n  size: parsedOutput.size\n};"
+      },
+      "id": "8ebd423c-16da-4a44-8c96-07683fe4659f",
+      "name": "Normalizer",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1152,
+        784
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ai-text-to-image-generator-flux-free-api.p.rapidapi.com/aaaaaaaaaaaaaaaaaiimagegenerator/quick.php",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-rapidapi-host",
+              "value": "ai-text-to-image-generator-flux-free-api.p.rapidapi.com"
+            },
+            {
+              "name": "x-rapidapi-key",
+              "value": "55667e550cmsh392cc3cf1e20d00p1bbfadjsn92c1aec854c7"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "=application/json",
+        "body": "={\n  \"prompt\": \"{{ $json.image_prompt.description }}\",\n   \"style_id\": \"{{ $json.style_id }}\",\n   \"size\" : \"{{ $json.size }}\"\n}",
+        "options": {}
+      },
+      "id": "bb7ac25e-e584-4737-9aa2-4f7e7ffb9971",
+      "name": "Text to image",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1488,
+        800
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "content": "> **AI-Powered Post Automation**  \n>  \n> This workflow automates the process of creating LinkedIn posts based on user-submitted topics. It generates both **content** and a **professional image** using AI, and automatically publishes the post.\n>  \n> - **Trigger**: Activated when a user submits a form with a topic for a LinkedIn post.\n> - **AI Content Generation**: Uses Google Gemini to generate an engaging post and image prompt.\n> - **Image Creation**: The prompt is sent to rapid.API for image generation.\n> - **Post Creation**: The generated text and image are posted directly.\n>  \n> **Key Features**:  \n> 1. Automated post creation for LinkedIn.  \n> 2. Professional image generation with an AI-driven prompt.  \n> 3. Instant publishing to your desired  platform.\n",
+        "height": 700
+      },
+      "id": "a984e557-1239-4905-bca3-ed6040cef517",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -160,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Text to image').item.json.result.data.results[0].origin }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "decoded_image_buffer"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1136,
+        1056
+      ],
+      "id": "91e07986-6fb9-4414-9d84-2b0284d84f52",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "sendTo": "aylasohail2008@gmail.com",
+        "subject": "Hello!",
+        "message": "Your image has been created",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "decoded_image_buffer"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1440,
+        1056
+      ],
+      "id": "0e20448b-9dad-4835-9365-57a101b0e26a",
+      "name": "Send a message",
+      "webhookId": "342aa8b8-811f-4fd3-b69c-d1332f9050f7",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "iwqHFWQX2Zag0MgA",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1280,
+        800
+      ],
+      "id": "5aca05e6-5f11-4a5f-a519-e0d3b1888862",
+      "name": "Wait",
+      "webhookId": "5dc01804-c185-4fe9-bd0c-51bd38fe0d4f"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Mapper": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Normalizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizer": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text to image": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Mapper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Text to image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "79cdca90-de88-4ed6-8538-2404ca5b4c6b",
+  "meta": {
+    "templateId": "5002",
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b6cd4fa42679f1f6832cc0d376bab05f765db296c5c5703588871bf556e5f7b1"
+  },
+  "id": "A137dM51E475lXDm",
+  "tags": []
+}
